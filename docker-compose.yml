@@ -1,0 +1,87 @@
+version: "3.5"
+
+services:
+
+  dbpostgres_cnab:
+    image: postgres:12.0-alpine
+    container_name: dbpostgres_cnab
+    volumes:
+      - ./postgres/01-init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql
+    environment:
+      POSTGRES_DB: marina_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: toor
+    expose:
+      - '5432'
+    ports:
+      - 5432:5432
+    restart: unless-stopped
+   
+  registereureka:
+    container_name: registereureka
+    depends_on:
+      - dbpostgres_cnab
+    build:
+      context: ./register
+      dockerfile: Dockerfile
+    image: my-register:latest
+    restart: always
+    expose:
+      - '8761'
+    ports:
+      - 8761:8761
+      
+  oauth:
+    container_name: oauth_spring_boot
+    depends_on:
+      - registereureka
+      - dbpostgres_cnab
+    build:
+      context: ./oauth
+      dockerfile: Dockerfile
+    image: my-oauth:latest
+    restart: always
+    expose:
+      - '5051'
+    ports:
+      - 5051:5051
+    environment: 
+      # Important for clients to register with eureka
+      - eureka.client.serviceUrl.defaultZone=http://registereureka:8761/eureka
+      
+  gateway:
+    container_name: gateway_spring_boot
+    depends_on:
+      - registereureka
+      - dbpostgres_cnab
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    image: my-gateway:latest
+    restart: always
+    expose:
+      - '8765'
+    ports:
+      - 8765:8765
+    environment: 
+      # Important for clients to register with eureka
+      - eureka.client.serviceUrl.defaultZone=http://registereureka:8761/eureka
+      
+  core:
+    container_name: core_cnab_spring_boot
+    depends_on:
+      - dbpostgres_cnab
+      - registereureka
+    build:
+      context: ./core
+      dockerfile: Dockerfile
+    image: my-core-cnab:latest
+    restart: always
+    ports:
+      - 5055:5055
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://dbpostgres_cnab:5432/marina_test?createDatabaseIfNotExist=true&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=toor
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - eureka.client.serviceUrl.defaultZone=http://registereureka:8761/eureka

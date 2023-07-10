@@ -1,0 +1,35 @@
+server:
+  port: 8765
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka    
+spring:
+  application:
+    name: api-gateway
+
+zuul:
+  sensitive-headers: Cookie,Set-Cookie,Authorization
+  routes:
+    oauth:
+      service-id: oauth
+      path: /oauth/**
+      sensitive-headers: 'Cookie,Set-Cookie'
+    users:
+      service-id: users
+      path: /users/**
+    todo:
+      service-id: core
+      path: /core/**
+      sensitiveHeaders: 'Cookie,Set-Cookie'
+  add-host-header: true
+  add-host-cookie: true
+  host:
+    connect-timeout-millis: 5000000
+    socket-timeout-millis: 5000000
+
+jwt:
+  secret: "MY-SECRET-KEY"
+  client:
+    name: "API_NAME_ACCESS"
+    secret: "API_SECRET_ACCESS"

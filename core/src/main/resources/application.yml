@@ -1,0 +1,14 @@
+server:
+#  port: 5055
+#  error:
+#    include-stacktrace: NEVER
+#  port: ${PORT:5055}
+spring:
+  application:
+    name: core
+
+eureka:
+  instance: instance-id=${spring:application:name}:${spring:application:instance_id:${random:value}}
+  client:
+    service-url:
+      defaultzone: http://localhost:8761

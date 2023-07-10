@@ -1,0 +1,22 @@
+server:
+  port: 5051
+  #port: ${PORT:0}
+spring:
+  application:
+    name: oauth
+#  cloud:
+#    loadbalancer:
+#      ribbon:
+#        enable: false
+
+eureka:
+  instance: instance-id=${spring:application:name}:${spring:application:instance_id:${random:value}}
+  client:
+    service-url:
+      defaultzone: http://localhost:8761
+
+jwt:
+  secret: "MY-SECRET-KEY"
+  client:
+    name: "API_NAME_ACCESS"
+    secret: "API_SECRET_ACCESS"
